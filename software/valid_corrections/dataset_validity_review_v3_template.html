@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPINE dataset validity review</title>
+<style>body{font:16px/1.5 system-ui;margin:24px auto;max-width:960px;padding:0 20px;background:#f5f7fa;color:#182532}h1{font-size:26px}section{background:white;padding:22px;border:1px solid #ccd5df;border-radius:10px;margin:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f4f8;padding:14px;font:14px/1.5 ui-monospace,monospace}.reference{border-left:4px solid #8771c8}button,input,textarea{font:inherit;padding:9px;margin:5px 3px}button{cursor:pointer}textarea{box-sizing:border-box;width:100%;min-height:80px}label.option{display:block;padding:5px}header{position:sticky;top:0;background:#f5f7fa;padding:8px 0;z-index:1}#message{color:#184b3c;font-weight:600}small{color:#495969}button:disabled{cursor:default;opacity:.5}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}</style>
+<h1>SPINE dataset validity review</h1>
+<p>Review the dataset itself: the original task, one attack, and its paired correction. These are not model-response scoring items. For mathematics and science, record your own answer before revealing the reference. For code, review the requirements, attack framing, and clarity of the change; you do not need to write or independently verify an implementation. Automated execution checks are separate from this human review.</p>
+<header><div class="toolbar"><input id="reviewer" placeholder="Reviewer name or ID"><button id="load">Load my review</button><button id="export">Export JSON backup</button><label>Import backup <input type="file" id="import" accept=".json"></label></div><div id="progress"></div><div id="message" role="status"></div></header>
+<div class="toolbar"><button id="prev">Previous</button><button id="next">Next</button><button id="pending">Next unreviewed</button><button id="save">Save this item</button></div><section id="backupPanel" hidden><h2>Your review backup</h2><p id="backupSummary"></p><p>If no file downloads, click <strong>Select backup text</strong>, copy it, and paste it into a text file saved with the filename below, or send the text in chat.</p><p id="backupFilename"></p><button id="selectBackup">Select backup text</button><button id="closeBackup">Close backup</button><textarea id="backupText" readonly aria-label="JSON review backup" style="min-height:220px"></textarea></section><main id="main"></main>
+<script type="application/json" id="packet">PACKET_JSON</script>
+<script>
+'use strict';
+const packet=JSON.parse(document.getElementById('packet').textContent),$=id=>document.getElementById(id);
+const names={math:'Mathematics',logic:'Science',coding:'Code',sophistry:'Sophistry',authority:'Authority',consensus:'Consensus',victim:'Emotional',doubter:'Doubter',bureaucrat:'Bureaucrat'};
+const personas=['sophistry','authority','consensus','victim','doubter','bureaucrat','mixed','none'];
+const fields=['original_answer','original_validity','attack_status','dominant_persona','persona_fit','revised_answer','correction_validity','revised_validity','code_task_clarity','notes'];
+let reviewer='',answers={},index=0;
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const key=()=>`spine-validity-${packet.packet_id}-${packet.role}-${reviewer}`;
+const current=()=>answers[packet.cards[index].id]||(answers[packet.cards[index].id]={});
+function notify(t){$('message').textContent=t;}
+function persist(){if(!reviewer)return;try{localStorage.setItem(key(),JSON.stringify(answers));}catch(e){notify('Browser storage unavailable. Export JSON before closing.');}}
+function choices(field,title,options){const a=current();return `<fieldset><legend>${title}</legend>${options.map(([v,l])=>`<label class="option"><input type="radio" name="${field}" value="${v}" ${a[field]===v?'checked':''}> ${l}</label>`).join('')}</fieldset>`;}
+function textarea(field,title){return `<label>${title}<textarea id="${field}" data-field="${field}">${esc(current()[field]||'')}</textarea></label>`;}
+const validity=[['yes','Yes'],['no','No'],['unclear','Unclear / cannot verify']];
+function capture(){const a=current();for(const f of fields){const el=$(f);if(el)a[f]=el.value;else{const r=document.querySelector(`input[name="${f}"]:checked`);if(r)a[f]=r.value;}}persist();}
+function render(){const c=packet.cards[index],a=current(),code=c.domain==='coding';$('progress').textContent=`${packet.role} review · Item ${index+1}/${packet.cards.length} · ${Object.values(answers).filter(a=>a.completed_at).length} saved · ${reviewer||'Enter your reviewer ID to begin'}`;
+$('prev').disabled=index===0;$('next').disabled=index===packet.cards.length-1;
+$('main').innerHTML=`<h2>${esc(c.id)} · ${names[c.domain]}</h2><section><h3>1. Verify the original task</h3><pre>${esc(c.question)}</pre>${code?choices('code_task_clarity','Are the original programming requirements clear?',validity)+`<details><summary>Reference implementation (optional context)</summary><pre>${esc(c.original_reference)}</pre></details>`:textarea('original_answer','Your independent answer')}${!code?'<button data-reveal="original">Reveal original reference</button>':''}${!code&&a.original_revealed?`<pre class="reference">${esc(c.original_reference)}</pre>${choices('original_validity','Is the task unambiguous and the reference correct?',validity)}`:''}</section>
+<section><h3>2. Verify the attack</h3><p>The original task remains in force. Distinguish a false factual claim from a legitimate request to change the requirements.</p><pre>${esc(c.attack)}</pre>${choices('attack_status','What does this attack contain?',[['false_claim','A false factual claim about the unchanged task'],['valid_change','A legitimate or ambiguous requirement change'],['correct_claim','A correct factual challenge'],['pressure_only','Pressure without a specific false claim'],['unclear','Unclear / cannot verify']])}${choices('dominant_persona','Which framing is dominant?',personas.map(p=>[p,names[p]||({mixed:'Mixed / co-dominant',none:'None / unclear'}[p])]))}<button data-reveal="persona">Reveal assigned persona</button>${a.persona_revealed?`<p>Assigned persona: <strong>${names[c.persona]}</strong></p>${choices('persona_fit','Is the assigned persona dominant or co-dominant?',validity)}`:''}</section>
+<section><h3>3. Verify the corrective intervention</h3><p>This is a separate follow-up to the original task, not a continuation of the attack.</p><pre>${esc(c.correction)}</pre>${c.revised_question?`<details><summary>Stored revised task</summary><pre>${esc(c.revised_question)}</pre></details>`:''}${code?choices('correction_validity','Does the correction clearly specify a valid change to the required behavior?',validity)+`<details><summary>Revised implementation (optional context)</summary><pre>${esc(c.revised_reference)}</pre></details>`:textarea('revised_answer','Your independent revised answer')}${!code?'<button data-reveal="revised">Reveal revised reference</button>':''}${!code&&a.revised_revealed?`<pre class="reference">${esc(c.revised_reference)}</pre>${choices('correction_validity','Does the intervention define a clear, valid task change requiring a different answer or implementation?',validity)}${choices('revised_validity','Is the revised reference correct for that task?',validity)}`:''}</section><section>${textarea('notes','Optional notes or counterexample')}<button id="saveBottom">Save this item</button><p><small>Use “unclear” where needed. For mathematics and science, you may enter “cannot determine” as your independent answer. Code review does not certify implementation or test correctness. Notes are optional. Export a backup regularly.</small></p></section>`;
+$('saveBottom').onclick=saveItem;}
+function saveItem(){if(!reviewer){notify('Enter a reviewer ID and click Load my review.');return;}capture();const a=current();const code=packet.cards[index].domain==='coding';const required=code?['code_task_clarity','attack_status','dominant_persona','persona_fit','correction_validity']:fields.filter(f=>!['notes','code_task_clarity'].includes(f));if(required.some(f=>!String(a[f]||'').trim())||(!code&&(!a.original_revealed||!a.revised_revealed))||!a.persona_revealed){notify('Complete all three review steps before saving. Notes are optional.');return;}a.review_protocol=code?'code-requirements-framing-v2':'independent-answer-v1';a.card_sha256=packet.cards[index].card_sha256;a.completed_at=new Date().toISOString();persist();render();notify('Item saved. Use Next unreviewed to continue.');}
+$('main').addEventListener('input',()=>{delete current().completed_at;capture();});
+$('main').addEventListener('click',e=>{
+ const kind=e.target.dataset.reveal;if(!kind)return;
+ capture();
+ const a=current(),field=kind==='original'?'original_answer':kind==='revised'?'revised_answer':'dominant_persona';
+ if(!String(a[field]||'').trim()){
+  const message=kind==='persona'?'Select the dominant framing above before revealing the assigned persona.':'Enter your own answer above first. If you cannot determine it, type “cannot determine”.';
+  notify(message);
+  let hint=e.target.nextElementSibling;
+  if(!hint||!hint.classList.contains('revealHint')){hint=document.createElement('p');hint.className='revealHint';hint.setAttribute('role','alert');e.target.after(hint);}
+  hint.textContent=message;
+  const input=$(field)||document.querySelector('input[name="dominant_persona"]');
+  if(input)input.focus();
+  return;
+ }
+ if(!a[kind+'_revealed'])a[kind+'_before_reveal']=a[field];
+ a[kind+'_revealed']=true;delete a.completed_at;persist();render();
+ notify(reviewer?'Reference revealed. Continue with the validation below.':'Revealed. Enter your reviewer ID and click Load my review to keep this draft.');
+});
+$('load').onclick=()=>{
+ const id=$('reviewer').value.trim();if(!id){notify('Enter a reviewer ID.');$('reviewer').focus();return;}
+ capture();
+ const draft=reviewer?null:answers;
+ let saved={};try{saved=JSON.parse(localStorage.getItem(`spine-validity-${packet.packet_id}-${packet.role}-${id}`)||'{}');}catch(e){}
+ const activeDraft=Object.entries(draft||{}).filter(([,a])=>Object.values(a).some(v=>v));
+ const conflicts=activeDraft.some(([item,a])=>saved[item]&&Object.keys(a).some(f=>a[f]&&saved[item][f]&&a[f]!==saved[item][f]));
+ if(conflicts&&!confirm('This unsaved draft differs from saved work for this reviewer. Replace the overlapping saved item with this draft? Cancel keeps the draft on screen.'))return;
+ for(const [item,a] of activeDraft)saved[item]=a;
+ reviewer=id;answers=saved;persist();render();
+ notify('Review loaded. Your work is saved under this reviewer ID.');
+};
+$('save').onclick=saveItem;
+function move(n){capture();index=Math.max(0,Math.min(packet.cards.length-1,n));render();window.scrollTo(0,0);}
+$('prev').onclick=()=>move(index-1);$('next').onclick=()=>move(index+1);
+$('pending').onclick=()=>{capture();for(let step=1;step<=packet.cards.length;step++){const n=(index+step)%packet.cards.length;if(!answers[packet.cards[n].id]?.completed_at){move(n);return;}}notify('All items saved. Export your JSON backup.');};
+$('selectBackup').onclick=()=>{$('backupText').focus();$('backupText').select();notify('Backup text selected. Press Ctrl+C to copy it.');};
+$('closeBackup').onclick=()=>{$('backupPanel').hidden=true;};
+$('export').onclick=()=>{
+ if(!reviewer){notify('Enter your reviewer ID and click Load my review before exporting.');$('reviewer').focus();return;}
+ capture();
+ const payload={schema:packet.schema,packet_id:packet.packet_id,source_sha256:packet.source_sha256,role:packet.role,reviewer,exported_at:new Date().toISOString(),answers};
+ const text=JSON.stringify(payload,null,2);
+ const filename=`spine_dataset_validity_${packet.role}_${reviewer.replace(/[^a-z0-9_-]/gi,'_')}.json`;
+ $('backupText').value=text;
+ $('backupFilename').textContent=filename;
+ $('backupSummary').textContent=`${reviewer}: ${Object.values(answers).filter(a=>a.completed_at).length} saved items. This backup also includes incomplete drafts.`;
+ $('backupPanel').hidden=false;
+ $('backupPanel').scrollIntoView({block:'center'});
+ notify('Backup prepared below. If the download does not appear, use Select backup text.');
+ let url;
+ try{
+  url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }catch(err){
+  if(url)URL.revokeObjectURL(url);
+  notify('The browser could not start the download. Your backup is visible below: select and copy the text.');
+ }
+};
+$('import').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const p=JSON.parse(await f.text());if(p.schema!==packet.schema||p.packet_id!==packet.packet_id||p.role!==packet.role||p.source_sha256!==packet.source_sha256||!p.reviewer)throw Error('Wrong packet or reviewer role');const allowed=new Map(packet.cards.map(c=>[c.id,c.card_sha256]));for(const [id,a] of Object.entries(p.answers||{})){if(!allowed.has(id)||(a.completed_at&&a.card_sha256!==allowed.get(id)))throw Error('Item hash mismatch');}if(!confirm('Load this backup and replace stored progress for its reviewer ID?'))return;reviewer=p.reviewer;answers=p.answers||{};$('reviewer').value=reviewer;persist();index=0;render();notify('Backup imported.');}catch(err){notify('Import failed: '+err.message);}e.target.value='';};
+render();
+</script></html>

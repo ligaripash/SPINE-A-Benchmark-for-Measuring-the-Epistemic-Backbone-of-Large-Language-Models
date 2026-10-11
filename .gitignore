@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+reproduced/
+review_workspace/
+*.lock
+*.inflight
+human_exports/
+*export*.json
+*private*.json
+*private*.jsonl

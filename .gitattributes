@@ -3,3 +3,7 @@ results/** -text
 licenses/** -text
 figures/** -text
 RELEASE_MANIFEST.json -text
+software/** -text
+reproduce/** -text
+SOFTWARE_VERIFICATION.json -text
+requirements*.txt -text

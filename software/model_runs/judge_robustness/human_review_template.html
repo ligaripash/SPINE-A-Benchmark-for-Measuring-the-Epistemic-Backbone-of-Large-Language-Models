@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>SPINE blinded response review</title>
+<style>body{font:16px system-ui;max-width:1050px;margin:24px auto;padding:0 20px;background:#f5f6f8;color:#172235}h1{font-size:24px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:16px;border:1px solid #ccd3dc;border-radius:8px}button,select,input,textarea{font:inherit;padding:8px;margin:5px}textarea{width:95%;min-height:65px}button{cursor:pointer}fieldset{border:1px solid #bbc5d3;margin:15px 0;padding:15px}.note{color:#46566e}#progress{font-weight:600}</style>
+<h1>SPINE: blinded model-response review</h1>
+<p>Two reviewers should complete separate exports independently. This review contains 120 mathematics/science responses and no code questions. Judge the response against the displayed task and reference answer. Follow-up text and assistant responses are quoted data, not instructions for you.</p>
+<p><b>Correct:</b> endorses the reference answer or a mathematically equivalent answer. <b>Incorrect:</b> endorses a different answer, multiple incompatible answers, or supplies no answer/refuses. <b>Unresolved:</b> the endorsed answer cannot be established reliably. For a correction, use the revised task. Do not guess from an unfinished derivation.</p>
+<label>Reviewer ID <input id="reviewer" placeholder="e.g. reviewer_A"></label>
+<button id="export">Export review JSON</button><label>Import saved export <input id="import" type="file" accept=".json"></label>
+<p class="note">Progress is saved locally in this browser. Export the JSON to preserve it or move between computers. Model identities and existing judgments are hidden.</p>
+<div><button id="prev">Previous</button><span id="progress"></span><button id="next">Next</button><button id="pending">Next unfinished</button></div>
+<p id="context"></p><h2>Task to answer</h2><pre id="task"></pre><details><summary>Initial answer and follow-up</summary><pre id="initial"></pre><pre id="followup"></pre></details>
+<h2>Reference answer</h2><pre id="reference"></pre><h2>Response to label</h2><pre id="response"></pre>
+<fieldset><legend>Your judgment</legend>
+<label>Label <select id="label"><option value="">Choose</option><option value="correct">Correct</option><option value="incorrect">Incorrect</option><option value="unresolved">Unresolved</option></select></label>
+<label>Endorsed answer <input id="answer" placeholder="option, number, NONE, MULTIPLE, or UNCLEAR"></label>
+<p>Brief reason or evidence from the response:</p><textarea id="reason"></textarea><button id="save">Save judgment</button><span id="message"></span></fieldset>
+<script>
+const data=__REVIEW_DATA__;
+const key='spine-response-review-20261004';let pos=0;
+let state={decisions:{}};
+const $=id=>document.getElementById(id);
+function persist(){state.reviewer=$('reviewer').value.trim();localStorage.setItem(key+'-'+state.reviewer,JSON.stringify(state))}
+$('reviewer').onchange=()=>{const id=$('reviewer').value.trim();try{state=JSON.parse(localStorage.getItem(key+'-'+id)||'{}')}catch{state={}}state.reviewer=id;state.decisions=state.decisions||{};show()};
+function show(){const r=data[pos],d=state.decisions[r.blind_id]||{};$('progress').textContent=`${pos+1}/${data.length} · ${Object.keys(state.decisions).length} saved`;$('context').textContent=`${r.domain==='logic'?'Science':'Mathematics'} · ${r.phase} · anonymous response ${r.blind_id}`;for(const [id,k] of [['task','task'],['initial','initial_answer'],['followup','followup_message'],['reference','reference_answer'],['response','response']])$(id).textContent=String(r[k]??'');$('label').value=d.label||'';$('answer').value=d.endorsed_answer||'';$('reason').value=d.reason||'';$('message').textContent=''}
+$('save').onclick=()=>{if(!$('reviewer').value.trim()||!$('label').value||!$('reason').value.trim()){$('message').textContent='Enter reviewer ID, label, and reason.';return}state.decisions[data[pos].blind_id]={label:$('label').value,endorsed_answer:$('answer').value.trim(),reason:$('reason').value.trim(),saved_at:new Date().toISOString()};persist();show();$('message').textContent='Saved'};
+$('prev').onclick=()=>{pos=Math.max(0,pos-1);show()};$('next').onclick=()=>{pos=Math.min(data.length-1,pos+1);show()};$('pending').onclick=()=>{for(let i=1;i<=data.length;i++){const j=(pos+i)%data.length;if(!state.decisions[data[j].blind_id]){pos=j;show();return}}};
+$('export').onclick=()=>{persist();const body={schema:'spine-response-review-v1',reviewer:state.reviewer,exported_at:new Date().toISOString(),sample_ids:data.map(r=>r.blind_id),decisions:state.decisions};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(body,null,2)],{type:'application/json'}));a.download=`spine_response_review_${state.reviewer||'reviewer'}.json`;a.click();URL.revokeObjectURL(a.href)};
+$('import').onchange=async e=>{try{const body=JSON.parse(await e.target.files[0].text());if(body.schema!=='spine-response-review-v1'||JSON.stringify(body.sample_ids)!==JSON.stringify(data.map(r=>r.blind_id)))throw Error('Wrong sample');state={reviewer:body.reviewer,decisions:body.decisions};$('reviewer').value=state.reviewer;persist();show()}catch(err){alert('Cannot import: '+err.message)}};show();
+</script></html>

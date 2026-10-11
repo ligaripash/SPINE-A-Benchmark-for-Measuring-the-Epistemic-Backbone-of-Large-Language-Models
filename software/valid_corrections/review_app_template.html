@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPINE dataset review</title>
+  <style>
+    :root { color-scheme: light; --ink:#172339; --muted:#607086; --line:#dce4eb; --blue:#225ca8; --pale:#f2f6fa; --warm:#fff6e9; }
+    * { box-sizing:border-box }
+    body { margin:0; background:#edf2f6; color:var(--ink); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif }
+    button,select,input,textarea { font:inherit }
+    button { cursor:pointer }
+    .top { position:sticky; top:0; z-index:5; background:#10223a; color:white; padding:12px 20px; display:flex; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px #10223a33 }
+    .top h1 { font-size:19px; margin:0 15px 0 0; letter-spacing:.01em }
+    .top input { width:145px; padding:6px 8px; border:1px solid #8699af; border-radius:5px }
+    .top button,.top label.file { border:1px solid #a7bfd7; background:#173b63; color:white; padding:7px 10px; border-radius:5px }
+    .top button:hover,.top label.file:hover { background:#265a90 }
+    .top .small { color:#c9d9e8; font-size:12px }
+    .layout { display:grid; grid-template-columns:260px minmax(0,1fr); min-height:calc(100vh - 64px) }
+    aside { position:sticky; top:64px; height:calc(100vh - 64px); overflow:auto; background:white; border-right:1px solid var(--line); padding:16px }
+    .filters { display:grid; gap:8px; margin:12px 0 }
+    .filters input,.filters select { width:100%; padding:7px; border:1px solid #becbd8; border-radius:5px; background:white }
+    .filters label { font-size:13px; display:flex; align-items:center; gap:6px }
+    .filters label input { width:auto }
+    .seed-list { display:grid; gap:3px }
+    .seed { width:100%; text-align:left; border:0; background:white; border-radius:5px; padding:7px 9px; display:flex; justify-content:space-between; align-items:center; color:var(--ink) }
+    .seed:hover { background:#eaf2fb }
+    .seed.active { background:#dcecff; color:#123f77; font-weight:700 }
+    .seed small { color:var(--muted); font-size:11px }
+    main { width:min(1120px,100%); margin:0 auto; padding:24px 26px 70px }
+    .intro,.card { background:white; border:1px solid var(--line); border-radius:10px; box-shadow:0 1px 2px #1231; padding:20px; margin:0 0 16px }
+    .intro h2 { font-size:22px; margin:0 0 4px }
+    .intro p { margin:4px 0; color:var(--muted) }
+    .counts { display:flex; flex-wrap:wrap; gap:14px; margin-top:13px; font-size:13px }
+    .counts strong { color:var(--blue) }
+    .nav { display:flex; gap:8px; margin:16px 0 }
+    .nav button,.reveal { background:white; color:var(--blue); border:1px solid #a9c2df; border-radius:5px; padding:7px 10px }
+    .tag { display:inline-block; margin-left:8px; color:#4c5f75; background:#e8eef4; border-radius:15px; font-size:12px; padding:2px 8px }
+    .card h3 { margin:0 0 10px; font-size:18px }
+    .card h4 { margin:14px 0 6px }
+    .card pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#f7f9fb; border:1px solid #e5ebf0; border-radius:6px; padding:13px; margin:8px 0 12px; font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace }
+    .card .question { font:14px/1.55 system-ui,-apple-system,Segoe UI,sans-serif }
+    .field-label { display:block; font-weight:600; font-size:13px; margin-top:12px }
+    textarea,.note { width:100%; min-height:64px; resize:vertical; padding:9px; border:1px solid #bfccd8; border-radius:6px; background:white }
+    .note { min-height:54px }
+    .gold { margin-top:12px; padding:12px; background:#eff7ee; border:1px solid #b4d4ad; border-radius:6px; white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace }
+    .decisions { display:flex; flex-wrap:wrap; gap:6px; margin:13px 0 7px }
+    .decisions button { border:1px solid #b8c8d6; background:#fff; border-radius:5px; padding:6px 10px }
+    .decisions button.selected { background:#205b9d; color:white; border-color:#205b9d }
+    .card select { max-width:100%; border:1px solid #bfccd8; border-radius:5px; padding:7px; background:white }
+    .meta { color:var(--muted); font-size:12px }
+    details { margin:10px 0; color:#78500b; background:var(--warm); border-radius:5px; padding:8px 10px; font-size:13px }
+    details summary { cursor:pointer }
+    .attack-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px }
+    .attack-grid .card { margin:0 }
+    .warning { border-left:4px solid #d78b15; padding:8px 12px; background:#fff8eb; margin:14px 0; font-size:13px }
+    @media(max-width:850px) { .layout{grid-template-columns:1fr} aside{position:static;height:auto;max-height:250px;border-right:0;border-bottom:1px solid var(--line)} .attack-grid{grid-template-columns:1fr} main{padding:16px} }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <h1>SPINE dataset review</h1>
+    <label>Reviewer <input id="reviewer" placeholder="Your name or ID" autocomplete="off"></label>
+    <button id="export">Export progress</button>
+    <label class="file">Import progress <input id="import" type="file" accept=".json,application/json" hidden></label>
+    <span class="small">Saved locally in this browser. Export a backup.</span>
+  </header>
+  <div class="layout">
+    <aside>
+      <strong>Seeds</strong>
+      <div class="filters">
+        <input id="search" placeholder="Search ID, e.g. code_109">
+        <select id="domain"><option value="">All domains</option><option value="math">Math</option><option value="logic">Multiple-choice reasoning</option><option value="coding">Code</option></select>
+        <label>Review size <select id="review-scope"><option value="rapid" selected>Quick spot check (12 seeds)</option><option value="sampled">Extended sample (119 seeds)</option><option value="full">All retained seeds (757)</option></select></label>
+        <label><input type="checkbox" id="evidence-only" checked> Attack and correction review (757 retained seeds)</label>
+        <label><input type="checkbox" id="audit-priority"> Source audit priorities (24 seeds)</label>
+        <label><input type="checkbox" id="pending"> Show incomplete only</label>
+        <label><input type="checkbox" id="flagged"> Show automated flags only</label>
+      </div>
+      <div class="meta" id="list-count"></div>
+      <div class="seed-list" id="seeds"></div>
+    </aside>
+    <main id="main"></main>
+  </div>
+  <script type="application/json" id="dataset">DATA_PLACEHOLDER</script>
+  <script>
+  'use strict';
+  const dataset = JSON.parse(document.getElementById('dataset').textContent);
+  const storeKey = 'spine-review-' + dataset.source_sha256;
+  let state = { reviewer:'', ratings:{} };
+  try { const saved=localStorage.getItem(storeKey); if(saved) state=JSON.parse(saved); } catch (_) {}
+  if (!state.ratings || typeof state.ratings!=='object') state.ratings={};
+  document.getElementById('reviewer').value=state.reviewer||'';
+  const $ = id=>document.getElementById(id);
+  const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let current=(dataset.items.find(x=>x.retained&&x.inRapid)||dataset.items.find(x=>x.retained)||dataset.items[0]).id;
+  const dataById=Object.fromEntries(dataset.items.map(x=>[x.id,x]));
+  function save(){try{localStorage.setItem(storeKey,JSON.stringify(state));}catch(_){}}
+  // Keep earlier judgments as provenance, but require fresh decisions for changed gold.
+  const compatibleGoldRevisions=new Set([dataset.gold_corrections_sha256,'5734c54e314a0d2f58860bb94153eceb691b1f0be2204591747f45b67646a9c9']);
+  for(const x of dataset.items){if(!x.correctedGold)continue;for(const key of ['task:'+x.id,...Object.keys(x.attacks).map(p=>'attack:'+x.id+':'+p),...(x.correction?['correction:'+x.id]:[])]){const r=state.ratings[key];if(r?.decision&&!compatibleGoldRevisions.has(r.reviewRevision)){r.priorDecision=r.decision;delete r.decision;}else if(r?.decision){r.reviewRevision=dataset.gold_corrections_sha256;}}}
+  save();
+  function rating(key){return state.ratings[key]||(state.ratings[key]={});}
+  function isRated(key){return ['accept','revise','exclude','unsure'].includes(state.ratings[key]?.decision);}
+  function attackNames(item){return $('review-scope').value==='rapid'?[item.rapidAttack].filter(Boolean):Object.keys(item.attacks);}
+  function correctionIsHuman(item){return !!item.correction&&!(item.domain==='coding'&&$('review-scope').value==='rapid');}
+  function keys(item){return [...($('evidence-only').checked?[]:['task:'+item.id]),...attackNames(item).map(p=>'attack:'+item.id+':'+p),...(correctionIsHuman(item)?['correction:'+item.id]:[])];}
+  const routineCheckFlags=new Set(['independent_arithmetic_check_required','independent_science_check_required','isolated_functional_test_required']);
+  function hasFlags(item){return item.taskFlags.length || Object.values(item.attackFlags).some(x=>x.length) || (item.correction?.flags||[]).some(f=>!routineCheckFlags.has(f));}
+  function auditPriority(x){return !!x.correctedGold||['excluded_ambiguous_from_corrected_dataset','quarantine_requires_adjudication'].includes(x.sourceAuditStatus);}
+  function inScope(x){const s=$('review-scope').value;return (s==='rapid'?x.inRapid:s==='sampled'?x.inSample:true)&&(!$('evidence-only').checked||x.retained);}
+  function visible(){const q=$('search').value.trim().toLowerCase(),d=$('domain').value,p=$('pending').checked,f=$('flagged').checked,a=$('audit-priority').checked;
+    return dataset.items.filter(x=>inScope(x)&&(!a||auditPriority(x))&&(!q||x.id.toLowerCase().includes(q))&&(!d||x.domain===d)&&(!p||keys(x).some(k=>!isRated(k)))&&(!f||hasFlags(x)));}
+  function progress(){let task=0,attack=0,correction=0,taskTotal=0,attackTotal=0,correctionTotal=0; const priority=$('audit-priority').checked,evidence=$('evidence-only').checked; for(const x of dataset.items){if(!inScope(x))continue;if(priority&&!auditPriority(x))continue;if(!evidence){taskTotal++;task+=isRated('task:'+x.id)?1:0;} for(const p of attackNames(x)){attackTotal++;attack+=isRated('attack:'+x.id+':'+p)?1:0;} if(correctionIsHuman(x)){correctionTotal++;correction+=isRated('correction:'+x.id)?1:0;}} return {task,attack,correction,taskTotal,attackTotal,correctionTotal};}
+  function list(){const items=visible(); $('list-count').textContent=items.length+' seeds shown'; $('seeds').innerHTML=items.map(x=>{
+    const completed=keys(x).filter(isRated).length, total=keys(x).length;
+    return `<button class="seed ${x.id===current?'active':''}" data-seed="${esc(x.id)}"><span>${esc(x.id)} ${hasFlags(x)?'⚑':''}</span><small>${completed}/${total}</small></button>`;}).join('');}
+  function flagsHtml(codes){return codes.length?`<details><summary>Automated review cues (${codes.length})</summary>${codes.map(esc).join(', ')}<br>These are not human decisions.</details>`:'';}
+  function decisions(key){const r=rating(key);return `<div class="decisions">${['accept','revise','exclude','unsure'].map(v=>`<button data-key="${esc(key)}" data-decision="${v}" class="${r.decision===v?'selected':''}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div>`;}
+  function textField(key,field,label,placeholder=''){return `<label class="field-label">${label}</label><textarea data-key="${esc(key)}" data-field="${field}" placeholder="${esc(placeholder)}">${esc(rating(key)[field]||'')}</textarea>`;}
+  function reference(key,gold){const r=rating(key);return `<button class="reveal" data-reveal="${esc(key)}">${r.revealed?'Hide reference answer':'Reveal reference answer'}</button>${r.revealed?`<div class="gold">${esc(gold)}</div>`:''}`;}
+  function cardTask(x){const k='task:'+x.id;return `<section class="card"><h3>1. Original task <span class="tag">${esc(x.domain)}</span></h3><p class="meta">Solve independently before revealing the stored answer.</p><pre class="question">${esc(x.prompt)}</pre>${textField(k,'independent','Your independent answer or code behavior','Record your answer before revealing the stored key')}${reference(k,x.gold)}${rating(k).revealed&&x.correctedGold?`<p class="meta">Audited replacement reference (original shown above):</p><div class="gold">${esc(x.correctedGold)}</div>`:''}${flagsHtml(x.taskFlags)}${x.sourceConcern?`<details><summary>Source audit concern</summary>${esc(x.sourceConcern)}</details>`:''}${x.sourceAuditNote?`<details><summary>Current source audit finding</summary>${esc(x.sourceAuditNote)}<br>This is an automated or research review finding, not a human rating.</details>`:''}<label class="field-label">Is the prompt answerable and stored answer correct?</label>${decisions(k)}${textField(k,'note','Reason, source, test case, or issue code')}</section>`;}
+  function cardContext(x){return `<section class="card"><h3>Original task and reference <span class="tag">${esc(x.domain)}</span></h3><p class="meta">Context for judging the new SPINE material. No source-task rating is required in this mode.</p><pre class="question">${esc(x.prompt)}</pre><div class="gold">${esc(x.correctedGold||x.gold)}</div>${x.correctedGold?'<p class="meta">The reference above replaces the original stored answer; recheck every attack against it.</p>':''}${flagsHtml(x.taskFlags)}${x.sourceAuditNote?`<details><summary>Source audit finding</summary>${esc(x.sourceAuditNote)}</details>`:''}</section>`;}
+  const attackOptions=['','false_claim','unsupported_pressure','correct_alternative','legitimate_new_information','not_pressure','ambiguous'];
+  function cardAttack(x,p){const k='attack:'+x.id+':'+p,r=rating(k);return `<section class="card"><h3>${esc(p)}</h3>${x.correctedGold?'<div class="warning">The original gold was corrected. Revalidate this attack against the corrected reference before using it in an experiment.</div>':''}<pre>${esc(x.attacks[p])}</pre>${flagsHtml(x.attackFlags[p]||[])}<label class="field-label">Challenge status</label><select data-key="${esc(k)}" data-field="category">${attackOptions.map(v=>`<option value="${v}" ${r.category===v?'selected':''}>${v||'Choose a status'}</option>`).join('')}</select><p class="meta">Accept only false claims or unsupported pressure against the original correct answer. A correct alternative or valid new premise needs review.</p>${decisions(k)}${textField(k,'note','Reason, counterexample, or issue code')}</section>`;}
+  function cardCorrection(x){if(!x.correction)return '';const k='correction:'+x.id,c=x.correction,smoke=c.codeSmoke||{};if(c.unable)return `<section class="card"><h3>3. No viable correction draft <span class="tag">${esc(c.origin)}</span></h3><p class="meta">Adjudicate the original task or author a valid alternative.</p><pre>${esc(c.reason)}</pre>${flagsHtml(c.flags||[])}${decisions(k)}${textField(k,'note','Why is the original task or correction infeasible?')}</section>`;return `<section class="card"><h3>3. Corrective intervention for review <span class="tag">${esc(c.origin)}</span></h3><p class="meta">Check that the intervention changes the answer for a valid reason. Generated drafts have not been promoted to gold.</p><pre>${esc(c.text)}</pre>${c.revisedQuestion?`<h4>Revised task implied by the intervention</h4><pre class="question">${esc(c.revisedQuestion)}</pre>`:''}${textField(k,'independent','Your revised answer or expected behavior','Solve before revealing the proposed key')}${reference(k,c.gold)}${rating(k).revealed&&c.derivation?`<details><summary>Candidate derivation</summary><pre>${esc(c.derivation)}</pre></details>`:''}${rating(k).revealed&&c.tests?.length?`<details><summary>Proposed code tests</summary><pre>${esc(JSON.stringify(c.tests,null,2))}</pre></details>`:''}${flagsHtml(c.flags||[])}${smoke.status?`<p class="meta">Code smoke check: ${esc(smoke.status)}${smoke.status==='tested'?`; revised passes examples: ${esc(smoke.all_new_pass)}, original fails at least one: ${esc(smoke.old_fails_any)}`:''}</p>`:''}<label class="field-label">Validity and minimal-change decision</label>${decisions(k)}${textField(k,'note','Validity, uniqueness, changed-answer and minimality notes')}</section>`;}
+  function cardCorrectionDisplay(x){if(x.domain==='coding'&&$('review-scope').value==='rapid'){const c=x.correction||{},m=x.codeMachine||{},n=m.property_oracle?.case_count||0;return `<section class="card"><h3>Code correction: automated check</h3><p class="meta">No human code-correction decision is required in the quick review.</p><pre>${esc(c.text||'No usable correction')}</pre><p>Machine status: <strong>${esc(m.machine_status||'unavailable')}</strong>. ${n?`${n} separately specified finite property cases passed.`:'No separate property oracle passed.'} Supplied example tests: ${esc(m.self_tests?.count||0)}.</p><p class="meta">This checks observed behavior, not all possible inputs or the full meaning of the English specification. It is not human validation.</p></section>`;}return cardCorrection(x);}
+  function render(){const x=dataById[current],p=progress(),items=visible(),at=items.findIndex(z=>z.id===current),evidence=$('evidence-only').checked,scope=$('review-scope').value;list();$('main').innerHTML=`<section class="intro"><h2>${esc(x.id)} <span class="tag">${esc(x.domain)}</span></h2><p>${evidence?'Use the original task and reference to judge the selected attack and correction.':'Review the original task, then its persona challenges'+(x.correction?', then the correction':'')+'.'} Your decisions are not prefilled.</p><div class="counts">${evidence?'':`<span><strong>${p.task}/${p.taskTotal}</strong> tasks</span>`}<span><strong>${p.attack}/${p.attackTotal}</strong> challenges</span><span><strong>${p.correction}/${p.correctionTotal}</strong> human correction decisions</span></div><div class="warning">${$('audit-priority').checked?'The source audit priority filter is selected.':scope==='rapid'?'This is a 12-seed qualitative spot check. Four code corrections have machine checks only; the 20 human decisions are 12 attacks and 8 math/reasoning corrections.':scope==='sampled'?'The extended 119-seed sample is selected.':'The full review is selected.'} ${evidence?'Only retained seeds are in scope; source-task ratings are optional context.':'Source-task ratings are required in this mode.'} No corrective record is independently validated; an unable or invalidated record is not a valid correction. Automated flags are inspection cues, not validity judgments. Export progress regularly.</div></section><div class="nav"><button data-nav="-1" ${at<=0?'disabled':''}>← Previous</button><button data-nav="1" ${at<0||at>=items.length-1?'disabled':''}>Next →</button></div>${evidence?cardContext(x):cardTask(x)}<h2>Selected persona challenge${scope==='rapid'?'':'s'}</h2><div class="attack-grid">${attackNames(x).map(p=>cardAttack(x,p)).join('')}</div>${cardCorrectionDisplay(x)}<div class="nav"><button data-nav="-1" ${at<=0?'disabled':''}>← Previous</button><button data-nav="1" ${at<0||at>=items.length-1?'disabled':''}>Next →</button></div>`;}
+  $('reviewer').addEventListener('input',e=>{state.reviewer=e.target.value;save();});
+  for(const id of ['search','domain','review-scope','evidence-only','audit-priority','pending','flagged'])$(id).addEventListener('input',()=>{if(id==='audit-priority'&&$('audit-priority').checked)$('review-scope').value='full';const v=visible();if(v.length&&!v.some(x=>x.id===current))current=v[0].id;render();});
+  document.addEventListener('input',e=>{const t=e.target;if(t.dataset.key&&t.dataset.field){rating(t.dataset.key)[t.dataset.field]=t.value;save();}});
+  document.addEventListener('change',e=>{const t=e.target;if(t.dataset.key&&t.dataset.field){rating(t.dataset.key)[t.dataset.field]=t.value;save();}});
+  document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+    if(t.dataset.seed){current=t.dataset.seed;render();window.scrollTo(0,0);return;}
+    if(t.dataset.nav){const v=visible(),i=v.findIndex(x=>x.id===current),next=v[i+Number(t.dataset.nav)];if(next){current=next.id;render();window.scrollTo(0,0);}return;}
+    if(t.dataset.decision){const r=rating(t.dataset.key);r.decision=t.dataset.decision;const item=dataById[t.dataset.key.split(':')[1]];if(item?.correctedGold)r.reviewRevision=dataset.gold_corrections_sha256;save();render();return;}
+    if(t.dataset.reveal){const r=rating(t.dataset.reveal);if(!r.revealed&&!String(r.independent||'').trim()&&!confirm('Record your independent answer before revealing the reference?'))return;r.revealed=!r.revealed;save();render();return;}
+  });
+  $('export').addEventListener('click',()=>{const scope=$('review-scope').value,payload={schema:'spine-human-review-v1',source_sha256:dataset.source_sha256,corrected_sha256:dataset.corrected_sha256,scope,review_mode:$('evidence-only').checked?'evidence':'all',sample_seed_count:scope==='rapid'?dataset.rapid_seed_count:dataset.sample_seed_count,reviewer:state.reviewer||'',exported_at:new Date().toISOString(),ratings:state.ratings};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='spine-review-'+(state.reviewer||'reviewer')+'-'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);});
+  $('import').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(payload.schema!=='spine-human-review-v1'||payload.source_sha256!==dataset.source_sha256||(payload.review_mode==='evidence'&&payload.corrected_sha256!==dataset.corrected_sha256))throw Error('Review file is not for this dataset version.');if(!confirm('Replace current browser progress with this review file?'))return;state={reviewer:payload.reviewer||'',ratings:payload.ratings||{}};$('reviewer').value=state.reviewer;save();render();}catch(err){alert('Could not import: '+err.message);}e.target.value='';});
+  render();
+  </script>
+</body>
+</html>
