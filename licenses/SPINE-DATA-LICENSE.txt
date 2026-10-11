@@ -1,0 +1,22 @@
+SPINE benchmark contributions and annotations
+Copyright (c) 2026 SPINE contributors
+
+The contributors license their copyrightable original benchmark contributions
+and consented, anonymized human annotations under Creative Commons
+Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/
+Full legal terms: https://creativecommons.org/licenses/by-sa/4.0/legalcode.en
+
+Attribute SPINE by its paper title and release URL, link to the license, and
+indicate modifications. Adaptations of this covered material must be shared
+under the applicable share-alike terms. No additional restrictions are imposed
+on material covered by this license.
+
+This grant covers only rights held by the SPINE contributors. Upstream task
+text, reference implementations, and tests retain their respective licenses
+and attribution, documented in THIRD_PARTY_NOTICES.txt. Original SPINE software
+is separately licensed in SPINE-CODE-MIT.txt.
+
+This grant does not purport to relicense model weights or raw model-response
+transcripts, or to remove applicable third-party rights or provider obligations.
+Those materials must be identified separately in the release inventory.

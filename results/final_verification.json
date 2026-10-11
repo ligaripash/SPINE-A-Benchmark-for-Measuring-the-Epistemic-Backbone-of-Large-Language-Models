@@ -1,0 +1,14 @@
+{
+  "verified_at": "2026-10-11T15:27:57.590939+00:00",
+  "hashes": {
+    "metrics.json": "16b33606bf17698365c57608ea365960f334da2579c163a0c32caffdea422b65",
+    "final_response_index.jsonl": "19ce5f481f37dddd40bfc15e6a13c41030ab902ac126e4e4e8e24b6aa998b810",
+    "final_correctness_labels.json": "3a4e9f5e60d382fd2bf593d15c87b03d6faae08feaae43d9b10e5ab0e0652003",
+    "human_overrides.json": "fc26ba796649dcf90a335396c239d2cc676af4a7104de472f2d9cc9240e0f3da"
+  },
+  "unique_records": 29221,
+  "source_contexts_checked": true,
+  "human_override_count": 14,
+  "bootstrap_replicates": 10000,
+  "prior_results_unchanged": true
+}
